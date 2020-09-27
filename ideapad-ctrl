@@ -1,0 +1,186 @@
+#!/bin/bash
+# All ideapad commands from https://wiki.archlinux.org/index.php/Lenovo_IdeaPad_5_15are05
+# Love all you kind folks who selflessly help out with the wiki
+# Arguments parsing adapted from http://mywiki.wooledge.org/BashFAQ/035
+
+# TODO: Add invalid argument handling
+# TODO: Fix help menu design
+# TODO: Fix battery conservation reading
+
+show_help() {
+	echo -e 'Usage: ideapad-ctrl [OPTIONS]'
+	echo -e 'Controls and displays settings for the Ideapad 5 15ARE05 only.'
+	echo -e 'THIS SOFTWARE IS PROVIDED WITHOUT WARRANTY AND MAY CAUSE DAMAGES. USE AT YOUR OWN RISK.\n'
+	echo -e 'NOTE: To enable both battery conservation and rapid charge mode, put the battery conservation flag after the rapid charge mode flag\n'
+	echo -e 'Options'
+	echo -e '  -p, --performance-mode [MODE]\t\tSet performance mode'
+	echo -e 	'\t0: Intelligent Cooling'
+	echo -e 	'\t1: Extreme Performance'
+	echo -e 	'\t2: Battery Saver'
+	echo -e '  -c --charge-mode [MODE]\t\tSet rapid charge mode'
+	echo -e 	'\t0: Disabled'
+	echo -e 	'\t1: Enabled'
+	echo -e '  -b, --battery-mode [MODE]\t\tSet battery conservation mode'
+	echo -e 	'\t0: Disabled'
+	echo -e 	'\t1: Enabled'
+}
+
+# performance mode
+set_perf_mode() {
+	# 0 = Intelligent Cooling
+	# 1 = Extreme Performance
+	# 3 = Battery Saving
+	
+	if [ $1 -eq 0 ]; then
+		echo '\_SB.PCI0.LPC0.EC0.VPC0.DYTC 0x000FB001' > /proc/acpi/call
+	elif [ $1 -eq 1 ]; then
+		echo '\_SB.PCI0.LPC0.EC0.VPC0.DYTC 0x0012B001' > /proc/acpi/call
+	elif [ $1 -eq 2 ]; then
+		echo '\_SB.PCI0.LPC0.EC0.VPC0.DYTC 0x0013B001' > /proc/acpi/call
+	else
+		echo "Invalid option for performance mode"
+	fi
+}
+
+get_perf_mode() {
+	echo '\_SB.PCI0.LPC0.EC0.FCMO' > /proc/acpi/call
+	perf_mode_hex=$(cat /proc/acpi/call | cut -d '' -f1)
+	
+	if [ "$perf_mode_hex" ]; then
+		if [ $((perf_mode_hex)) -eq $((0x0)) ]; then
+				perf_mode='Intelligent Cooling'
+		elif [ $((perf_mode_hex)) -eq $((0x1)) ]; then
+				perf_mode='Extreme Performance'
+		elif [ $((perf_mode_hex)) -eq $((0x2)) ]; then
+				perf_mode='Battery Saving'
+		else
+				perf_mode='Unrecognized Value'
+		fi
+	else
+		perf_mode='Could not read value'
+	fi
+	
+}
+
+# rapid charge mode
+set_charge_mode() {
+	if [ $1 -eq 0 ]; then
+		echo '\_SB.PCI0.LPC0.EC0.VPC0.SBMC 0x08' > /proc/acpi/call
+	elif [ $1 -eq 1 ]; then
+		echo '\_SB.PCI0.LPC0.EC0.VPC0.SBMC 0x07' > /proc/acpi/call
+	else
+		echo 'Invalid option for rapid charge mode'
+	fi
+}
+
+get_charge_mode() {
+	echo '\_SB.PCI0.LPC0.EC0.QCHO' > /proc/acpi/call
+	charge_mode_hex=$(cat /proc/acpi/call | cut -d '' -f1)
+	
+	if [ "$charge_mode_hex" ]; then
+		if [ $((charge_mode_hex)) -eq $((0x0)) ]; then
+			charge_mode='Disabled'
+		elif [ $((charge_mode_hex)) -eq $((0x1)) ]; then
+			charge_mode='Enabled'
+		else
+			charge_mode='Unrecognized Value'
+		fi
+	else
+		charge_mode='Could not read value'
+	fi
+}
+
+# battery conservation mode
+set_batt_mode() {
+	if [ $1 -eq 0 ]; then
+		echo '\_SB.PCI0.LPC0.EC0.VPC0.SBMC 0x05' > /proc/acpi/call
+	elif [ $1 -eq 1 ]; then
+		echo '\_SB.PCI0.LPC0.EC0.VPC0.SBMC 0x03' > /proc/acpi/call
+	else
+		echo 'Invalid option for battery conservation mode'
+	fi
+}
+
+get_batt_mode() {
+	echo '\_SB.PCI0.LPC0.EC0.BTSM' > /proc/acpi/call
+	batt_mode_hex=$(cat /proc/acpi/call | cut -d '' -f1)
+	
+	if [ "$batt_mode_hex" ]; then
+		if [ $((batt_mode_hex)) -eq $((0x0)) ]; then
+			batt_mode='Disabled'
+		elif [ $((batt_mode_hex)) -eq $((0x1)) ]; then
+			batt_mode='Enabled'
+		else
+			batt_mode='Unrecognized Value'
+		fi
+	else
+		batt_mode='Could not read value'
+	fi
+}
+
+# display current status
+display_settings() {
+	get_perf_mode
+	get_batt_mode
+	get_charge_mode
+
+	echo "Performance Mode: $perf_mode ($perf_mode_hex)"
+	echo "Battery Conservation: $batt_mode ($batt_mode_hex)"
+	echo "Rapid Charge: $charge_mode ($charge_mode_hex)"
+}
+
+die() {
+	printf '%s\n' "$1" >&2
+	exit 1
+}
+
+while :; do
+	case $1 in
+		-h|--help)
+			show_help
+			exit
+			;;
+		-p|--performance-mode)
+			if [ "$2" ]; then
+				if [ "$2" = '0' ] || [ "$2" = '1' ] || [ "$2" = '2' ]; then
+					set_perf_mode "$2"
+					shift
+				else
+					die 'ERROR: Invalid argument for --performance-mode'
+				fi
+			else
+				die 'ERROR: --performance-mode require an argument'
+			fi
+			;;
+		-c|--charge-mode)
+			if [ "$2" ]; then
+				if [ "$2" = '0' ] || [ "$2" = '1' ]; then
+					set_charge_mode "$2"
+					shift
+				else
+					die 'ERROR: Invalid argument for --charge-mode'
+				fi
+			else
+				die 'ERROR: --charge-mode require an argument'
+			fi
+			;;
+		-b|--battery-mode)
+			if [ "$2" ]; then
+				if [ "$2" = '0' ] || [ "$2" = '1' ]; then
+					set_batt_mode "$2"
+					shift
+				else
+					die 'ERROR: Invalid argument for --battery-mode'
+				fi
+			else
+				die 'ERROR: --battery-mode require an argument'
+			fi
+			;;
+		*)
+			break
+	esac
+	
+	shift
+done
+
+display_settings
