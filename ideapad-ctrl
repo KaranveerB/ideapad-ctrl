@@ -1,11 +1,7 @@
 #!/bin/bash
 # All ideapad commands from https://wiki.archlinux.org/index.php/Lenovo_IdeaPad_5_15are05
 # Love all you kind folks who selflessly help out with the wiki
-# Arguments parsing adapted from http://mywiki.wooledge.org/BashFAQ/035
-
-# TODO: Add invalid argument handling
-# TODO: Fix help menu design
-# TODO: Fix battery conservation reading
+# Argument parsing adapted from http://mywiki.wooledge.org/BashFAQ/035
 
 show_help() {
 	echo -e 'Usage: ideapad-ctrl [OPTIONS]'
