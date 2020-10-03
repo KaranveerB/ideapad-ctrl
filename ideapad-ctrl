@@ -1,6 +1,6 @@
 #!/bin/bash
-# All ideapad commands from https://wiki.archlinux.org/index.php/Lenovo_IdeaPad_5_15are05
-# Love all you kind folks who selflessly help out with the wiki
+# This script is POSIX compatible and contains no bashisms.
+# All acpi commands from https://wiki.archlinux.org/index.php/Lenovo_IdeaPad_5_15are05
 # Argument parsing adapted from http://mywiki.wooledge.org/BashFAQ/035
 
 show_help() {
@@ -130,6 +130,7 @@ die() {
 	exit 1
 }
 
+# main execution
 while :; do
 	case $1 in
 		-h|--help)
