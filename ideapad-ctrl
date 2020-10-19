@@ -1,11 +1,11 @@
 #!/bin/bash
-# This script is POSIX compatible and contains no bashisms.
+# This script is POSIX compatible and contains no bashisms
 # All acpi commands from https://wiki.archlinux.org/index.php/Lenovo_IdeaPad_5_15are05
 # Argument parsing adapted from http://mywiki.wooledge.org/BashFAQ/035
 
 show_help() {
 	echo -e 'Usage: ideapad-ctrl [OPTIONS]'
-	echo -e 'Controls and displays settings for the Ideapad 5 15ARE05 only.'
+	echo -e 'Controls and displays settings for the Lenovo Ideapad 5 15ARE05 only.'
 	echo -e 'THIS SOFTWARE IS PROVIDED WITHOUT WARRANTY AND MAY CAUSE DAMAGES. USE AT YOUR OWN RISK.\n'
 	echo -e 'NOTE: To enable both battery conservation and rapid charge mode, put the battery conservation flag after the rapid charge mode flag\n'
 	echo -e 'Options'
@@ -55,7 +55,6 @@ get_perf_mode() {
 	else
 		perf_mode='Could not read value'
 	fi
-	
 }
 
 # rapid charge mode
